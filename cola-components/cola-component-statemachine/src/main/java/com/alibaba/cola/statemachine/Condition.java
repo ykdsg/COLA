@@ -1,6 +1,7 @@
 package com.alibaba.cola.statemachine;
 
 /**
+ * 条件，是否允许到达某个状态<br>
  * Condition
  *
  * @author Frank Zhang
@@ -14,7 +15,7 @@ public interface Condition<C> {
      */
     boolean isSatisfied(C context);
 
-    default String name(){
+    default String name() {
         return this.getClass().getSimpleName();
     }
 }

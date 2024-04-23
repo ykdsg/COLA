@@ -10,11 +10,8 @@ import com.alibaba.craftsman.domain.metrics.devquality.DevQualityMetric;
 import com.alibaba.craftsman.domain.metrics.techcontribution.CodeReviewMetric;
 import com.alibaba.craftsman.domain.metrics.techcontribution.CodeReviewMetricItem;
 import com.alibaba.craftsman.domain.metrics.techcontribution.ContributionMetric;
-import com.alibaba.craftsman.domain.metrics.techinfluence.ATAMetric;
-import com.alibaba.craftsman.domain.metrics.techinfluence.ATAMetricItem;
 import com.alibaba.craftsman.domain.metrics.techinfluence.InfluenceMetric;
 import com.alibaba.craftsman.domain.metrics.weight.DevWeight;
-import com.alibaba.craftsman.domain.metrics.weight.QAWeight;
 import com.alibaba.craftsman.domain.user.UserProfile;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,7 +25,7 @@ import org.junit.Test;
 public class UserProfileTest {
 
     @Test
-    public void testCalculateScore(){
+    public void testCalculateScore() {
         UserProfile userProfile = new UserProfile();
         userProfile.setWeight(new DevWeight());
 
@@ -67,6 +64,7 @@ public class UserProfileTest {
         codeReviewMetricItem.setReviewId("12234455");
         codeReviewMetric.addMetricItem(codeReviewMetricItem);
         ContributionMetric contributionMetric = new ContributionMetric(userProfile);
+        contributionMetric.setCodeReviewMetric(codeReviewMetric);
 
         //dev quality metric
         DevQualityMetric devQualityMetric = new DevQualityMetric(userProfile);
@@ -83,7 +81,7 @@ public class UserProfileTest {
     }
 
     @Test(expected = BizException.class)
-    public void testNPE(){
+    public void testNPE() {
         UserProfile userProfile = new UserProfile();
         userProfile.setWeight(new DevWeight());
 

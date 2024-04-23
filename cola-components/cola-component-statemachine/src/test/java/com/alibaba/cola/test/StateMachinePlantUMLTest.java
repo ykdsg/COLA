@@ -11,8 +11,21 @@ import org.junit.Test;
 
 import java.util.stream.Stream;
 
-import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.*;
-import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskStatusEnum.*;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Agree_Over_P0_Sell;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Apply_Over_P0_Sell;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Create;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Normal_Update;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.P0_Changed;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Page_Price_changed;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Reject_Over_P0_Sell;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Supplier_Agree;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Supplier_Reject;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskEventEnum.Supplier_Timeout;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskStatusEnum.Closed;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskStatusEnum.None;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskStatusEnum.Price_Manager_Processing;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskStatusEnum.Supplier_Manager_Processing;
+import static com.alibaba.cola.test.StateMachinePlantUMLTest.PriceAdjustmentTaskStatusEnum.Supplier_Processing;
 
 /**
  * StateMachinePlantUMLTest
@@ -75,100 +88,59 @@ public class StateMachinePlantUMLTest {
             return this == Supplier_Timeout;
         }
 
-        public boolean isSystemEvent(){
-            return  this == Create ||
-                    this == Normal_Update ||
-                    this == P0_Changed ||
-                    this == Page_Price_changed;
+        public boolean isSystemEvent() {
+            return this == Create || this == Normal_Update || this == P0_Changed || this == Page_Price_changed;
         }
     }
 
     @Before
-    public void init(){
+    public void init() {
         Debugger.enableDebug();
     }
 
     @Test
-    public void testPlantUML(){
+    public void testPlantUML() {
         StateMachineBuilder<PriceAdjustmentTaskStatusEnum, PriceAdjustmentTaskEventEnum, StateMachineTest.Context> builder = StateMachineBuilderFactory.create();
 
-        builder.externalTransition()
-                .from(None)
-                .to(Supplier_Processing)
-                .on(Create)
-                .when(checkCondition())
+        builder.externalTransition().from(None).to(Supplier_Processing).on(Create).when(checkCondition())
                 .perform(doAction());
 
         // 商家调价
-        Stream.of(Supplier_Processing, Supplier_Manager_Processing, Price_Manager_Processing)
-                .forEach(status ->
-                        builder.externalTransition()
-                                .from(status)
-                                .to(Closed)
-                                .on(Supplier_Agree)
-                                .when(checkCondition())
-                                .perform(doAction())
-                );
-
-        // 商家 -上升至-> 控商小二
-        builder.externalTransition()
-                .from(Supplier_Processing)
-                .to(Supplier_Manager_Processing)
-                .on(Supplier_Reject)
-                .when(checkCondition())
-                .perform(doAction());
-
-        builder.externalTransition()
-                .from(Supplier_Processing)
-                .to(Supplier_Manager_Processing)
-                .on(Supplier_Timeout)
-                .when(checkCondition())
-                .perform(doAction());
-
-        // 申请申请高于P0售卖
-        builder.externalTransition()
-                .from(Supplier_Manager_Processing)
-                .to(Price_Manager_Processing)
-                .on(Apply_Over_P0_Sell)
-                .when(checkCondition())
-                .perform(doAction());
-
-        // 同意高于P0价售卖
-        builder.externalTransition()
-                .from(Price_Manager_Processing)
-                .to(Closed)
-                .on(Agree_Over_P0_Sell)
-                .when(checkCondition())
-                .perform(doAction());
-
-        // 拒绝高于P0价售卖
-        builder.externalTransition()
-                .from(Price_Manager_Processing)
-                .to(Supplier_Manager_Processing)
-                .on(Reject_Over_P0_Sell)
-                .when(checkCondition())
-                .perform(doAction());
-
-        // 普通字段更新事件
-        Stream.of(Supplier_Processing, Supplier_Manager_Processing, Price_Manager_Processing)
-                .forEach(status -> builder
-                        .internalTransition()
-                        .within(status)
-                        .on(Normal_Update)
-                        .when(checkCondition())
-                        .perform(doAction())
-                );
-
-        // P0价变更事件、页面价高于合理价事件
-        Stream.of(P0_Changed, Page_Price_changed)
-                .forEach(event -> builder.externalTransitions()
-                        .fromAmong(Supplier_Processing, Supplier_Manager_Processing, Price_Manager_Processing)
-                        .to(Closed)
-                        .on(event)
-                        .when(checkCondition())
+        Stream.of(Supplier_Processing, Supplier_Manager_Processing, Price_Manager_Processing).forEach(
+                status -> builder.externalTransition().from(status).to(Closed).on(Supplier_Agree).when(checkCondition())
                         .perform(doAction()));
 
+        // 商家 -上升至-> 控商小二
+        builder.externalTransition().from(Supplier_Processing).to(Supplier_Manager_Processing).on(Supplier_Reject)
+                .when(checkCondition()).perform(doAction());
+
+        builder.externalTransition().from(Supplier_Processing).to(Supplier_Manager_Processing).on(Supplier_Timeout)
+                .when(checkCondition()).perform(doAction());
+
+        // 申请申请高于P0售卖
+        builder.externalTransition().from(Supplier_Manager_Processing).to(Price_Manager_Processing)
+                .on(Apply_Over_P0_Sell).when(checkCondition()).perform(doAction());
+
+        // 同意高于P0价售卖
+        builder.externalTransition().from(Price_Manager_Processing).to(Closed).on(Agree_Over_P0_Sell)
+                .when(checkCondition()).perform(doAction());
+
+        // 拒绝高于P0价售卖
+        builder.externalTransition().from(Price_Manager_Processing).to(Supplier_Manager_Processing)
+                .on(Reject_Over_P0_Sell).when(checkCondition()).perform(doAction());
+
+        // 普通字段更新事件
+        Stream.of(Supplier_Processing, Supplier_Manager_Processing, Price_Manager_Processing).forEach(
+                status -> builder.internalTransition().within(status).on(Normal_Update).when(checkCondition())
+                        .perform(doAction()));
+
+        // P0价变更事件、页面价高于合理价事件
+        Stream.of(P0_Changed, Page_Price_changed).forEach(event -> builder.externalTransitions()
+                .fromAmong(Supplier_Processing, Supplier_Manager_Processing, Price_Manager_Processing).to(Closed)
+                .on(event).when(checkCondition()).perform(doAction()));
+
         StateMachine stateMachine = builder.build("AdjustPriceTask");
+        // 实际生成的代码还需要加工下，plantUML 的状态图有一个初始的：[*] --> ${第一个节点}
         String plantUML = stateMachine.generatePlantUML();
         System.out.println(plantUML);
 
@@ -179,8 +151,9 @@ public class StateMachinePlantUMLTest {
     }
 
     private Action<PriceAdjustmentTaskStatusEnum, PriceAdjustmentTaskEventEnum, StateMachineTest.Context> doAction() {
-        return (from, to, event, ctx)->{
-            System.out.println(ctx.operator+" is operating "+ctx.entityId+" from:"+from+" to:"+to+" on:"+event);
+        return (from, to, event, ctx) -> {
+            System.out.println(
+                    ctx.operator + " is operating " + ctx.entityId + " from:" + from + " to:" + to + " on:" + event);
         };
     }
 }
